@@ -572,8 +572,11 @@ int git_attr_fnmatch__parse(
 
 	pattern = *base;
 
-	while (git__isspace(*pattern)) pattern++;
-	if (!*pattern || *pattern == '#') {
+	while (!allow_space && git__isspace(*pattern))
+		pattern++;
+
+	if (!*pattern || *pattern == '#' || *pattern == '\n' ||
+	    (*pattern == '\r' && *(pattern + 1) == '\n')) {
 		*base = git__next_line(pattern);
 		return GIT_ENOTFOUND;
 	}
@@ -596,7 +599,7 @@ int git_attr_fnmatch__parse(
 	slash_count = 0;
 	for (scan = pattern; *scan != '\0'; ++scan) {
 		/* scan until (non-escaped) white space */
-		if (git__isspace(*scan) && *(scan - 1) != '\\') {
+		if (git__isspace(*scan) && scan > pattern && *(scan - 1) != '\\') {
 			if (!allow_space || (*scan != ' ' && *scan != '\t' && *scan != '\r'))
 				break;
 		}
