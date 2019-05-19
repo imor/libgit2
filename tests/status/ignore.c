@@ -1213,3 +1213,29 @@ void test_status_ignore__unignored_subdirs(void)
 	assert_is_ignored("dir/a.test");
 	refute_is_ignored("dir/subdir/a.test");
 }
+
+void test_status_ignore__leading_spaces_are_significant(void)
+{
+	static const char *test_files[] = {
+		"empty_standard_repo/a.test",
+		"empty_standard_repo/b.test",
+		"empty_standard_repo/c.test",
+		"empty_standard_repo/d.test",
+		NULL
+	};
+
+	make_test_data("empty_standard_repo", test_files);
+	cl_git_mkfile(
+		"empty_standard_repo/.gitignore",
+		" a.test\n"
+		"b.test\n"
+		"\tc.test\n"
+		"d.test\n");
+
+	refute_is_ignored("a.test");
+	assert_is_ignored(" a.test");
+	assert_is_ignored("b.test");
+	refute_is_ignored("c.test");
+	assert_is_ignored("\tc.test");
+	assert_is_ignored("d.test");
+}
