@@ -862,12 +862,18 @@ static int merge_conflict_invoke_driver(
 		(error = git_odb_write(&oid, odb, buf.ptr, buf.size, GIT_OBJECT_BLOB)) < 0)
 		goto done;
 
+	if (buf.size > UINT32_MAX) {
+		git_error_set(GIT_ERROR_MERGE, "merged file contents too large for index");
+		error = -1;
+		goto done;
+	}
+
 	result = git_pool_mallocz(&diff_list->pool, sizeof(git_index_entry));
 	GIT_ERROR_CHECK_ALLOC(result);
 
 	git_oid_cpy(&result->id, &oid);
 	result->mode = mode;
-	result->file_size = buf.size;
+	result->file_size = (uint32_t)buf.size;
 
 	result->path = git_pool_strdup(&diff_list->pool, path);
 	GIT_ERROR_CHECK_ALLOC(result->path);
