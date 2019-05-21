@@ -11,12 +11,12 @@
 
 #include <ctype.h>
 
-const char *git_config_escapes = "ntb\"\\";
-const char *git_config_escaped = "\n\t\b\"\\";
+const char* git_config_escapes = "ntb\"\\";
+const char* git_config_escaped = "\n\t\b\"\\";
 
-static void set_parse_error(git_config_parser *reader, int col, const char *error_str)
+static void set_parse_error(git_config_parser* reader, int col, const char* error_str)
 {
-	const char *file = reader->file ? reader->file->path : "in-memory";
+	const char* file = reader->file ? reader->file->path : "in-memory";
 	git_error_set(GIT_ERROR_CONFIG, "failed to parse config file: %s (in %s:%"PRIuZ", column %d)",
 		error_str, file, reader->ctx.line_num, col);
 }
@@ -27,10 +27,10 @@ GIT_INLINE(int) config_keychar(int c)
 	return isalnum(c) || c == '-';
 }
 
-static int strip_comments(char *line, int in_quotes)
+static int strip_comments(char* line, int in_quotes)
 {
 	int quote_count = in_quotes, backslash_count = 0;
-	char *ptr;
+	char* ptr;
 
 	for (ptr = line; *ptr; ++ptr) {
 		if (ptr[0] == '"' && ptr > line && ptr[-1] != '\\')
@@ -59,11 +59,11 @@ static int strip_comments(char *line, int in_quotes)
 }
 
 
-static int parse_section_header_ext(git_config_parser *reader, const char *line, const char *base_name, char **section_name)
+static int parse_section_header_ext(git_config_parser * reader, const char* line, const char* base_name, char** section_name)
 {
 	int c, rpos;
-	char *first_quote, *last_quote;
-	const char *line_start = line;
+	char* first_quote, * last_quote;
+	const char* line_start = line;
 	git_buf buf = GIT_BUF_INIT;
 	size_t quoted_len, alloc_len, base_name_len = strlen(base_name);
 
@@ -81,6 +81,11 @@ static int parse_section_header_ext(git_config_parser *reader, const char *line,
 
 	last_quote = strrchr(line, '"');
 	quoted_len = last_quote - first_quote;
+
+	if ((last_quote - line) > INT_MAX) {
+		set_parse_error(reader, 0, "invalid section header, line too long");
+		goto end_error;
+	}
 
 	if (quoted_len == 0) {
 		set_parse_error(reader, 0, "Missing closing quotation mark in section header");
@@ -140,7 +145,7 @@ end_parse:
 	}
 
 	*section_name = git_buf_detach(&buf);
-	return &line[rpos + 2] - line_start; /* rpos is at the closing quote */
+	return (int)(&line[rpos + 2] - line_start); /* rpos is at the closing quote */
 
 end_error:
 	git_buf_dispose(&buf);
